@@ -1,0 +1,6 @@
+{
+  "name": "MANTA Revista",
+  "description": "Catálogo interactivo de portadas MANTA: Agosto (La fila perfecta), Septiembre (La nueva artesanía) y Octubre (En la Roma)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
