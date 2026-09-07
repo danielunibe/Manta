@@ -575,7 +575,7 @@ export default function App() {
               const target = e.target as HTMLElement | null;
               if (
                 target?.closest(
-                  'button, a, input, select, textarea, [role="button"], #top-header-pills-bar, #menuOverlay, header'
+                  'button, a, input, select, textarea, [role="button"], [data-editorial-notes], #top-header-pills-bar, #menuOverlay, header'
                 )
               ) {
                 return;

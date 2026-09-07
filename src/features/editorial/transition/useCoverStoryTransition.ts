@@ -360,7 +360,7 @@ export function useCoverStoryTransition({
     const target = e.target as HTMLElement | null;
     if (
       target?.closest(
-        'button, a, input, select, textarea, [role="button"], #top-header-pills-bar, #menuOverlay'
+        'button, a, input, select, textarea, [role="button"], [data-editorial-notes], #top-header-pills-bar, #menuOverlay'
       )
     ) {
       return;

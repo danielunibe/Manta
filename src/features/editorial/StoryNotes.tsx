@@ -27,6 +27,11 @@ interface EditorialVideoProps {
 const EditorialVideo: React.FC<EditorialVideoProps> = ({ src, poster, alt, reduceMotion, audioEnabled, orientation = 'portrait' }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [hasVideoFrame, setHasVideoFrame] = useState(false);
+
+  useEffect(() => {
+    setHasVideoFrame(false);
+  }, [src, poster]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -44,9 +49,17 @@ const EditorialVideo: React.FC<EditorialVideoProps> = ({ src, poster, alt, reduc
       className={`absolute inset-0 overflow-hidden ${orientation === 'landscape' ? 'bg-[#0b1114]' : ''}`}
       style={orientation === 'landscape' && poster ? { backgroundImage: `linear-gradient(180deg,rgba(8,13,16,.15),rgba(8,13,16,.58)), url(${poster})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
     >
+      {poster && (
+        <img
+          src={poster}
+          alt=""
+          aria-hidden="true"
+          className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${orientation === 'landscape' ? 'object-contain' : 'object-cover'} ${hasVideoFrame ? 'opacity-0' : 'opacity-100'}`}
+        />
+      )}
       <video
         ref={videoRef}
-        className={`h-full w-full ${orientation === 'landscape' ? 'object-contain' : 'object-cover'}`}
+        className={`relative z-[1] h-full w-full transition-opacity duration-300 ${orientation === 'landscape' ? 'object-contain' : 'object-cover'} ${hasVideoFrame ? 'opacity-100' : 'opacity-0'}`}
         src={src}
         poster={poster}
         autoPlay
@@ -57,6 +70,10 @@ const EditorialVideo: React.FC<EditorialVideoProps> = ({ src, poster, alt, reduc
         preload="metadata"
         controls={false}
         aria-label={alt}
+        onLoadedData={() => {
+          setHasVideoFrame(true);
+          void videoRef.current?.play().catch(() => undefined);
+        }}
         onContextMenu={(event) => event.preventDefault()}
       />
       <button
@@ -190,6 +207,7 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
   return (
     <section
       id={`story-notes-${story.id}`}
+      data-editorial-notes="true"
       aria-label={`Contenido editorial de ${story.title}`}
       className="pointer-events-auto absolute inset-0 z-[26] h-full overflow-hidden"
       style={{ touchAction: 'none' }}
@@ -229,7 +247,7 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
 
         <div className="min-h-0 flex-1 overflow-hidden" aria-live="polite">
           <div
-            className={`flex h-full ${isDragging || reduceMotion ? '' : 'transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)]'}`}
+            className={`flex h-full flex-col ${isDragging || reduceMotion ? '' : 'transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)]'}`}
             style={{ transform: `translateY(calc(-${noteIndex * 100}% + ${dragOffset}px))` }}
           >
             {notes.map((note, index) => {
