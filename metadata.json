@@ -1,6 +1,6 @@
 {
-  "name": "MANTA Revista",
-  "description": "Catálogo interactivo de portadas MANTA: Agosto (La fila perfecta), Septiembre (La nueva artesanía) y Octubre (En la Roma)",
+  "name": "MANTA · Innovación editorial-commerce",
+  "description": "Revista digital interactiva desde Guadalajara que combina narrativa, video, música ambiental y catálogo contextual para web y dispositivos móviles.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

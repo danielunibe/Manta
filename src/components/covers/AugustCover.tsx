@@ -169,10 +169,7 @@ export const AugustCover: React.FC<AugustCoverProps> = ({
         <div className="absolute inset-0 z-10 select-none pointer-events-none">
 
           {/* Framing border (dissolves progressively) */}
-          <div
-            className="absolute inset-[8px] sm:inset-[12px] z-5 border border-[#f2ecdd]/20 pointer-events-none"
-            style={{ opacity: mapRange(p, 0.20, 0.55, 1.0, 0.0) }}
-          />
+          {/* The cover image must end cleanly; the former framing rule read as a stray line. */}
 
           {/* Vertical left text (shifts outward and dissolves) */}
           <span
