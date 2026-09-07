@@ -101,7 +101,7 @@ export const AugustCover: React.FC<AugustCoverProps> = ({
       className={
         isMorphed
           ? 'relative w-full h-full [transform-style:preserve-3d] select-none'
-          : `relative w-[min(68vw,calc(55svh*5/7))] md:w-[min(42vw,calc(50svh*5/7))] lg:w-[min(330px,calc(48svh*5/7))] [transform-style:preserve-3d] will-change-transform cursor-grab active:cursor-grabbing select-none ${
+          : `relative w-[min(84vw,calc(72svh*5/7))] md:w-[min(42vw,calc(50svh*5/7))] lg:w-[min(330px,calc(48svh*5/7))] [transform-style:preserve-3d] will-change-transform cursor-grab active:cursor-grabbing select-none manta-cover-tilt ${
               tiltState.isPulsing ? 'animate-pulso' : ''
             }`
       }
@@ -139,7 +139,7 @@ export const AugustCover: React.FC<AugustCoverProps> = ({
                     ? 'none'
                     : `translate(calc(${tiltState.px} * -1cqw), calc(${tiltState.py} * -0.8cqw))`
                 }}
-                className="absolute inset-0"
+              className="absolute inset-0 manta-cover-media"
               >
                 <img
                   src={look.image}
@@ -214,17 +214,6 @@ export const AugustCover: React.FC<AugustCoverProps> = ({
           </aside>
 
           {/* Base bottom tricolor shimmer line */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-[2.5px] z-6 overflow-hidden bg-[linear-gradient(90deg,#d64545_0_33.4%,#e8b23a_33.4%_66.7%,#2f8f83_66.7%_100%)] shadow-[0_-1px_4px_rgba(0,0,0,0.5)]"
-            style={{ opacity: mapRange(p, 0.25, 0.70, 1.0, 0.0) }}
-          >
-            <div
-              className={`absolute inset-0 bg-[linear-gradient(90deg,transparent_30%,rgba(255,255,255,0.7)_50%,transparent_70%)] -translate-x-full animate-shimmer ${
-                isHovered && !isMorphed ? 'running' : 'paused'
-              }`}
-            />
-          </div>
-
           {/* Rain Stamp (travels, un-rotates, dissolves) */}
           <div
             className="absolute z-7 text-center border-[1.5px] border-[#e8b23a]/90 text-[#e8b23a] rounded-[3px] uppercase font-bold leading-[1.7] bg-[#080f14]/45 shadow-[0_3px_10px_rgba(0,0,0,0.5)]"

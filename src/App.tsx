@@ -186,6 +186,7 @@ export default function App() {
       ? windowWidth
       : 1000;
   const slideSpacing = Math.max(260, Math.min(safeWindowWidth * 0.72, 420));
+  const isCompactViewport = safeWindowWidth < 768;
 
   const isDraggingRef = useRef(false);
 
@@ -523,11 +524,11 @@ export default function App() {
   const activeAbsDiff = Math.abs(activeDiff);
   const activeTranslateX = Number.isFinite(activeDiff * slideSpacing) ? activeDiff * slideSpacing : 0;
   // Depth response: center 1.0, lateral ~0.84 (within .82–.88 specification)
-  const activeScale = Math.max(0.84, 1 - Math.min(activeAbsDiff, 1.2) * 0.16);
+  const activeScale = isCompactViewport ? 1 : Math.max(0.84, 1 - Math.min(activeAbsDiff, 1.2) * 0.16);
   const activeBaseOpacity = Math.max(0.40, 1 - Math.min(activeAbsDiff, 1.2) * 0.40);
   const activeOpacity = isReady ? activeBaseOpacity : 0;
   // Rotation: center 0°, lateral max 12° progressive (within 10–14° specification)
-  const activeRotateY = Math.max(-12, Math.min(12, activeDiff * 12));
+  const activeRotateY = isCompactViewport ? 0 : Math.max(-12, Math.min(12, activeDiff * 12));
 
   const coverComponents = React.useMemo(() => [
     <AugustCover
@@ -650,9 +651,9 @@ export default function App() {
         >
           {/* Fluid Interactive Carousel Arena */}
           <main
-            className={`relative z-10 w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing select-none max-md:-translate-y-[10svh] ${phase === 'story' ? 'touch-auto' : 'touch-none'}`}
+            className={`relative z-10 w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing select-none max-md:translate-y-0 ${phase === 'story' ? 'touch-auto' : 'touch-none'}`}
           >
-            <div className="relative w-full h-full flex items-center justify-center [perspective:1400px]">
+            <div className={`relative w-full h-full flex items-center justify-center ${isCompactViewport ? '[perspective:none]' : '[perspective:1400px]'}`}>
               {EDITIONS.map((ed, idx) => {
                 const safeContinuousIndex = Number.isFinite(continuousIndex) ? continuousIndex : currentIndex;
                 const diff = idx - safeContinuousIndex;
@@ -667,6 +668,10 @@ export default function App() {
                 const zIndex = Math.round(50 - absDiff * 20);
 
                 const isCurrent = idx === currentIndex;
+                const mobileAtRest = isCompactViewport && !isDragging && progress <= 0.001;
+                const mobileTransform = isCurrent
+                  ? 'translate3d(0, 0, 0) scale(1) rotateY(0deg)'
+                  : `translate3d(${diff >= 0 ? '110%' : '-110%'}, 0, 0) scale(1) rotateY(0deg)`;
 
                 return (
                   <div
@@ -679,9 +684,10 @@ export default function App() {
                       }
                     }}
                     style={{
-                      transform: `translateX(${translateX}px) scale(${scale}) rotateY(${rotateY}deg)`,
-                      opacity: isCurrent ? (isReady ? 1 : 0) : opacity,
+                      transform: mobileAtRest ? mobileTransform : `translateX(${translateX}px) scale(${isCompactViewport ? 1 : scale}) rotateY(${isCompactViewport ? 0 : rotateY}deg)`,
+                      opacity: isCurrent ? (isReady ? 1 : 0) : (mobileAtRest ? 0 : opacity),
                       zIndex: isCurrent ? 50 : zIndex,
+                      pointerEvents: mobileAtRest && !isCurrent ? 'none' : 'auto',
                       transition: isDragging || isCoverDetached || progress > 0
                         ? 'none'
                         : 'transform 380ms cubic-bezier(0.16, 1, 0.3, 1), opacity 380ms cubic-bezier(0.16, 1, 0.3, 1)',

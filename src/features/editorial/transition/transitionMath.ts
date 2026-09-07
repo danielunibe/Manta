@@ -49,12 +49,12 @@ export interface CoverDimensions {
 }
 
 /**
- * Calculates initial cover dimensions based on viewport size matching CSS [min(68vw,calc(55svh*5/7))]
+ * Calculates initial cover dimensions based on the mobile-safe cover sizing.
  */
 export function calculateCoverDimensions(windowWidth: number, windowHeight: number): CoverDimensions {
   // Mobile / Tablet / Desktop responsive magazine width
   const aspect = 5 / 7;
-  let targetWidth = Math.min(windowWidth * 0.68, windowHeight * 0.55 * aspect);
+  let targetWidth = Math.min(windowWidth * 0.84, windowHeight * 0.72 * aspect);
 
   if (windowWidth >= 1024) {
     targetWidth = Math.min(330, windowHeight * 0.48 * aspect);

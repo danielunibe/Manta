@@ -49,6 +49,16 @@
   }
 }
 
+/* A touch viewport needs a stable, front-facing cover. Perspective tilt and
+   parallax make the editorial poster look skewed when the user is simply
+   trying to browse it. Desktop pointer interaction remains unchanged. */
+@media (max-width: 767px) {
+  .manta-cover-tilt,
+  .manta-cover-media {
+    transform: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .editorial-hotspot {
     transition: none;

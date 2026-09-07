@@ -101,7 +101,7 @@ export const SeptemberCover: React.FC<SeptemberCoverProps> = ({
       className={`relative [transform-style:preserve-3d] will-change-transform select-none ${
         isMorphed
           ? 'w-full h-full'
-          : 'w-[min(68vw,calc(55svh*5/7))] md:w-[min(42vw,calc(50svh*5/7))] lg:w-[min(330px,calc(48svh*5/7))] cursor-grab active:cursor-grabbing'
+          : 'w-[min(84vw,calc(72svh*5/7))] md:w-[min(42vw,calc(50svh*5/7))] lg:w-[min(330px,calc(48svh*5/7))] cursor-grab active:cursor-grabbing manta-cover-tilt'
       } ${tiltState.isPulsing && !isMorphed ? 'animate-pulso' : ''}`}
     >
       <article
@@ -137,7 +137,7 @@ export const SeptemberCover: React.FC<SeptemberCoverProps> = ({
                     ? 'none'
                     : `translate(calc(${tiltState.px} * -10px), calc(${tiltState.py} * -8px))`
                 }}
-                className="absolute inset-0"
+                className="absolute inset-0 manta-cover-media"
               >
                 <img
                   src={look.image}
@@ -169,17 +169,6 @@ export const SeptemberCover: React.FC<SeptemberCoverProps> = ({
           <div className="hidden" aria-hidden="true" />
 
           {/* Base Mexican Tricolor Bar with Shimmer */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-[2.5px] z-6 overflow-hidden bg-[linear-gradient(90deg,#006847_0_33.4%,#f2ecdd_33.4%_66.7%,#ce1126_66.7%_100%)] shadow-[0_-1px_4px_rgba(0,0,0,0.5)]"
-            style={{ opacity: mapRange(p, 0.25, 0.70, 1.0, 0.0) }}
-          >
-            <div
-              className={`absolute inset-0 bg-[linear-gradient(90deg,transparent_30%,rgba(255,255,255,0.75)_50%,transparent_70%)] -translate-x-full animate-shimmer ${
-                isHovered && !isMorphed ? 'running' : 'paused'
-              }`}
-            />
-          </div>
-
           {/* Tricolor Tag (Right Bottom, shifts outward and dissolves) */}
           <div className="hidden" aria-hidden="true" />
 
