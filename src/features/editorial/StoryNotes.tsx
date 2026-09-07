@@ -125,6 +125,36 @@ const EditorialVideo: React.FC<EditorialVideoProps> = ({ src, poster, alt, reduc
   );
 };
 
+interface EditorialImageProps {
+  src: string;
+  alt: string;
+  orientation?: 'portrait' | 'landscape';
+  loading?: 'eager' | 'lazy';
+}
+
+const EditorialImage: React.FC<EditorialImageProps> = ({ src, alt, orientation = 'portrait', loading = 'lazy' }) => {
+  if (orientation !== 'landscape') {
+    return <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" loading={loading} />;
+  }
+
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-[#0b1114]">
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-[-8%] h-[116%] w-[116%] scale-110 object-cover opacity-35 blur-[18px]"
+      />
+      <img
+        src={src}
+        alt={alt}
+        className="absolute inset-x-4 top-[12svh] h-auto max-h-[62svh] w-[calc(100%-2rem)] object-contain"
+        loading={loading}
+      />
+    </div>
+  );
+};
+
 const productList = (ids: string[]): Product[] => ids
   .map((id) => getProduct(id))
   .filter((product): product is Product => Boolean(product));
@@ -309,7 +339,7 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
                     {video?.src ? (
                       <EditorialVideo src={video.src} poster={poster?.src} orientation={video.orientation} alt={`Movimiento de ${note.title}`} reduceMotion={reduceMotion} audioEnabled={videoAudioEnabled} />
                     ) : poster?.src ? (
-                      <img src={poster.src} alt={poster.alt ?? note.title} className="h-full w-full object-cover" loading={index === noteIndex ? 'eager' : 'lazy'} />
+                      <EditorialImage src={poster.src} alt={poster.alt ?? note.title} orientation={poster.orientation} loading={index === noteIndex ? 'eager' : 'lazy'} />
                     ) : (
                       <div className="flex h-full items-end p-5 font-['Fraunces',Georgia,serif] text-[clamp(5rem,18vw,10rem)] leading-none text-white/10">{String(index + 1).padStart(2, '0')}</div>
                     )}
