@@ -1,7 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { MagazineEdition } from '../../../types';
 import { clamp, mapRange, calculateCoverDimensions } from './transitionMath';
-import { EditorialHotspots } from '../EditorialHotspots';
 import { StoryNotes } from '../StoryNotes';
 import { getStory } from '../../../domain/content';
 
@@ -341,14 +340,6 @@ export const CoverStorySurface: React.FC<CoverStorySurfaceProps> = ({
           {!isMobileCoverFlip && coverElement}
         </div>
 
-        {isStoryActive && (
-          <EditorialHotspots
-            hotspots={currentLook.hotspots}
-            disabled={edition.status === 'upcoming'}
-            onSelectProduct={(productId) => onSelectProduct?.(productId)}
-          />
-        )}
-
         {/* Dynamic Dark Vignette for contrast */}
         <div
           style={{
@@ -381,78 +372,6 @@ export const CoverStorySurface: React.FC<CoverStorySurfaceProps> = ({
         />
       )}
 
-      {/* Extremely subtle vertical hint for PageFlip reading gesture */}
-      {progress > 0.60 && (
-        <div
-          style={{
-            opacity: mapRange(progress, 0.65, 1.0, 0, 0.3)
-          }}
-          className="hidden sm:flex absolute right-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex-col items-center gap-2 text-[9px] tracking-[0.3em] uppercase font-['Space_Grotesk'] [writing-mode:vertical-rl] select-none transition-opacity duration-200"
-        >
-          <span>desliza</span>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-bounce rotate-180">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      )}
-
-      {/* Bottom Story Look Indicator Layout (Complementing each edition's typography, hides during GPU flip) */}
-      {progress > 0.60 && (
-        <div
-          style={{
-            opacity: mapRange(progress, 0.65, 1.0, 0, 1),
-            transform: `translateY(${mapRange(progress, 0.65, 1.0, 16, 0)}px)`,
-            pointerEvents: progress < 0.9 ? 'none' : 'auto'
-          }}
-          className="absolute bottom-8 left-0 right-0 px-6 md:px-12 z-20 pointer-events-none flex justify-between items-end w-full gap-6"
-        >
-          {edition.id === 'august' ? (
-            /* August: Headline is bottom-right -> Indicator is bottom-left */
-            <div className="flex flex-col items-start gap-2.5 pointer-events-auto pb-2">
-              <div className="font-['Space_Grotesk'] text-xs tracking-widest opacity-60">
-                {String(currentLookIdx + 1).padStart(2, '0')} / {String(edition.looks.length).padStart(2, '0')}
-              </div>
-              <div className="flex gap-2">
-                {edition.looks.map((_, idx) => (
-                  <div
-                    key={idx}
-                    aria-label={`Look ${idx + 1}`}
-                    className={`h-[2px] transition-all duration-300 ${
-                      idx === currentLookIdx
-                        ? 'w-8 bg-white opacity-100'
-                        : 'w-4 bg-white opacity-30'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div />
-          )}
-
-          {edition.id !== 'august' && (
-            /* September & October: Headline is left -> Indicator is bottom-right */
-            <div className="flex flex-col items-end gap-2.5 pointer-events-auto pb-2">
-              <div className="font-['Space_Grotesk'] text-xs tracking-widest opacity-60">
-                {String(currentLookIdx + 1).padStart(2, '0')} / {String(edition.looks.length).padStart(2, '0')}
-              </div>
-              <div className="flex gap-2">
-                {edition.looks.map((_, idx) => (
-                  <div
-                    key={idx}
-                    aria-label={`Look ${idx + 1}`}
-                    className={`h-[2px] transition-all duration-300 ${
-                      idx === currentLookIdx
-                        ? 'w-8 bg-white opacity-100'
-                        : 'w-4 bg-white opacity-30'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

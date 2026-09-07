@@ -4,6 +4,7 @@ import { Story } from '../../domain/content';
 import { getEditorialMedia } from '../../domain/editorialMedia';
 import { getProduct } from '../../domain/catalog';
 import { Product } from '../../types';
+import { EditorialProductTile, EditorialProductTilePlacement } from './EditorialProductTile';
 
 interface StoryNotesProps {
   story: Story;
@@ -28,6 +29,10 @@ const EditorialVideo: React.FC<EditorialVideoProps> = ({ src, poster, alt, reduc
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [hasVideoFrame, setHasVideoFrame] = useState(false);
+  const isLandscape = orientation === 'landscape';
+  const mediaClassName = isLandscape
+    ? 'absolute inset-x-4 top-[12svh] h-auto max-h-[62svh] w-[calc(100%-2rem)] object-contain'
+    : 'absolute inset-0 h-full w-full object-cover';
 
   useEffect(() => {
     setHasVideoFrame(false);
@@ -41,25 +46,45 @@ const EditorialVideo: React.FC<EditorialVideoProps> = ({ src, poster, alt, reduc
   }, [audioEnabled, isMuted]);
 
   if (reduceMotion) {
-    return poster ? <img src={poster} alt={alt} className="h-full w-full object-cover" loading="lazy" /> : null;
+    if (!poster) return null;
+    return (
+      <div className={`absolute inset-0 overflow-hidden ${isLandscape ? 'bg-[#0b1114]' : ''}`}>
+        {isLandscape && (
+          <img
+            src={poster}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-[-8%] h-[116%] w-[116%] scale-110 object-cover opacity-35 blur-[18px]"
+          />
+        )}
+        <img src={poster} alt={alt} className={mediaClassName} loading="lazy" />
+      </div>
+    );
   }
 
   return (
     <div
-      className={`absolute inset-0 overflow-hidden ${orientation === 'landscape' ? 'bg-[#0b1114]' : ''}`}
-      style={orientation === 'landscape' && poster ? { backgroundImage: `linear-gradient(180deg,rgba(8,13,16,.15),rgba(8,13,16,.58)), url(${poster})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+      className={`absolute inset-0 overflow-hidden ${isLandscape ? 'bg-[#0b1114]' : ''}`}
     >
+      {isLandscape && poster && (
+        <img
+          src={poster}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-[-8%] h-[116%] w-[116%] scale-110 object-cover opacity-35 blur-[18px]"
+        />
+      )}
       {poster && (
         <img
           src={poster}
           alt=""
           aria-hidden="true"
-          className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${orientation === 'landscape' ? 'object-contain' : 'object-cover'} ${hasVideoFrame ? 'opacity-0' : 'opacity-100'}`}
+          className={`${mediaClassName} transition-opacity duration-300 ${hasVideoFrame ? 'opacity-0' : 'opacity-100'}`}
         />
       )}
       <video
         ref={videoRef}
-        className={`relative z-[1] h-full w-full transition-opacity duration-300 ${orientation === 'landscape' ? 'object-contain' : 'object-cover'} ${hasVideoFrame ? 'opacity-100' : 'opacity-0'}`}
+        className={`${mediaClassName} z-[2] transition-opacity duration-300 ${hasVideoFrame || !poster ? 'opacity-100' : 'opacity-0'}`}
         src={src}
         poster={poster}
         autoPlay
@@ -103,6 +128,15 @@ const EditorialVideo: React.FC<EditorialVideoProps> = ({ src, poster, alt, reduc
 const productList = (ids: string[]): Product[] => ids
   .map((id) => getProduct(id))
   .filter((product): product is Product => Boolean(product));
+
+const overlayPlacementFor = (index: number, primary: 'left' | 'center' | 'right'): EditorialProductTilePlacement => {
+  const placements: Record<'left' | 'center' | 'right', EditorialProductTilePlacement[]> = {
+    left: ['left', 'right', 'left-lower'],
+    right: ['right', 'left', 'right-lower'],
+    center: ['center', 'left', 'right']
+  };
+  return placements[primary][index] ?? placements[primary][placements[primary].length - 1];
+};
 
 export const StoryNotes: React.FC<StoryNotesProps> = ({
   story,
@@ -223,8 +257,7 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
       onWheel={handleWheel}
     >
       <div className="relative flex h-full w-full flex-col overflow-hidden bg-transparent">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 pb-3 pt-[max(16px,env(safe-area-inset-top))] md:px-10">
-          <span className="h-1 w-10 rounded-full bg-white/20" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end px-5 pb-3 pt-[max(16px,env(safe-area-inset-top))] md:px-10">
           <span className="font-['Spline_Sans_Mono',ui-monospace,monospace] text-[10px] tracking-[0.18em] text-white/45">
             {String(noteIndex + 1).padStart(2, '0')} / {String(notes.length).padStart(2, '0')}
           </span>
@@ -261,7 +294,14 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
               const poster = media.find((item) => item?.kind === 'poster' && item.src);
               const track = note.audioTrackId ? getEditorialMedia(note.audioTrackId) : undefined;
               const products = productList(note.productIds);
-              const visibleProducts = products.slice(0, 3);
+              const primaryOverlayProduct = note.productOverlaySrc
+                ? products.find((product) => product.image === note.productOverlaySrc)
+                : undefined;
+              const overlayProducts = [
+                ...(primaryOverlayProduct ? [primaryOverlayProduct] : []),
+                ...products.filter((product) => product.id !== primaryOverlayProduct?.id)
+              ].slice(0, 3);
+              const primaryOverlayPosition = note.productOverlayPosition ?? 'right';
 
               return (
                 <article key={note.id} className="relative h-full min-h-0 w-full shrink-0 overflow-hidden px-5 pb-[max(22px,env(safe-area-inset-bottom))] pt-20 md:px-12 md:pb-10">
@@ -277,6 +317,20 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
                     <div className="pointer-events-none absolute inset-y-0 left-0 w-[min(78%,760px)] bg-[linear-gradient(90deg,rgba(3,8,10,.44)_0%,rgba(3,8,10,.08)_78%,transparent_100%)]" aria-hidden="true" />
                   </div>
 
+                  {note.commerceEnabled && overlayProducts.length > 0 && (
+                    <div className="pointer-events-none absolute inset-0 z-[12]" aria-label="Productos de esta página">
+                      {overlayProducts.map((product, productIndex) => (
+                        <EditorialProductTile
+                          key={product.id}
+                          product={product}
+                          featured={productIndex === 0}
+                          placement={overlayPlacementFor(productIndex, primaryOverlayPosition)}
+                          onOpen={(productId) => onSelectProduct?.(productId)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
                   <div className="relative z-10 flex h-full min-h-0 flex-col justify-end pb-2 pt-1 md:pb-4">
                     <div className="max-w-[min(90vw,760px)] pb-3 md:pb-5">
                       <div className="flex items-center justify-between gap-4 text-[9px] uppercase tracking-[0.2em] text-[#f2c14e]">
@@ -291,36 +345,18 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex min-h-[62px] items-end justify-between gap-3 pt-3">
-                      <div className="flex min-w-0 items-center gap-2 overflow-hidden">
-                        {visibleProducts.map((product) => (
-                          <button
-                            key={product.id}
-                            type="button"
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onClick={(event) => { event.stopPropagation(); onSelectProduct?.(product.id); }}
-                            aria-label={`Ver ${product.name}`}
-                            className="group flex h-[82px] w-[96px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-xl bg-[#0a1114]/58 p-1.5 text-center shadow-[0_10px_24px_rgba(0,0,0,.24)] backdrop-blur-md transition-transform hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c14e] md:h-24 md:w-28"
-                          >
-                            <img src={product.image} alt="" className="h-12 w-12 rounded-md object-cover md:h-14 md:w-14" loading="lazy" />
-                            <span className="mt-1 max-w-full truncate font-['Spline_Sans_Mono',ui-monospace,monospace] text-[7px] uppercase tracking-[0.04em] text-white/75">{product.name}</span>
-                            <span className="text-[9px] text-[#f2c14e]">{product.priceFormatted}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {track?.src && (
-                          <button
-                            type="button"
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onClick={(event) => { event.stopPropagation(); onPlayAudio?.(track.id); }}
-                            aria-label={`Escuchar ${note.title}`}
-                            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.07] text-white/70 transition hover:bg-white/[0.14] hover:text-[#f2c14e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c14e]"
-                          >
-                            <Headphones className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
+                    <div className="flex min-h-[44px] items-end justify-end gap-3 pt-3">
+                      {track?.src && (
+                        <button
+                          type="button"
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onClick={(event) => { event.stopPropagation(); onPlayAudio?.(track.id); }}
+                          aria-label={`Escuchar ${note.title}`}
+                          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.07] text-white/70 transition hover:bg-white/[0.14] hover:text-[#f2c14e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c14e]"
+                        >
+                          <Headphones className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </article>
