@@ -8,6 +8,16 @@ MANTA es un prototipo de revista digital interactiva que convierte una edición 
 
 La experiencia está diseñada para funcionar en móvil y escritorio: portada, lectura por hojas, transición tipo flipboard entre historias, productos contextuales, favoritos y bolsa local.
 
+## Vistas móviles
+
+Estas capturas documentan la experiencia en formato vertical:
+
+| Portada | Store | Menú |
+|---|---|---|
+| ![Portada móvil](docs/screenshots/manta-cover-mobile.png) | ![Store móvil](docs/screenshots/manta-store-mobile.png) | ![Menú móvil](docs/screenshots/manta-menu-mobile.png) |
+
+La portada prioriza la imagen y el tema de la edición. El Store conecta las historias con sus piezas relacionadas y el menú concentra la navegación sin competir con la lectura.
+
 ## Qué explora
 
 - Revista editorial vertical con narrativa visual y lectura por escenas.
@@ -20,6 +30,19 @@ La experiencia está diseñada para funcionar en móvil y escritorio: portada, l
 ## Enfoque
 
 MANTA toma la lógica útil de un catálogo digital —ediciones, páginas, producto contextual y bolsa— y la reorganiza desde una filosofía de revista. La historia es la superficie principal; el producto aparece como parte de la composición y como una puerta de regreso a la escena.
+
+## Recorrido de la experiencia
+
+```text
+Portada → abrir revista → hoja editorial → pieza contextual → ficha → bolsa
+       ↘ Store → historia → producto → favoritos / bolsa
+```
+
+La lectura se organiza por escenas. Dentro de una historia se avanza verticalmente; el cambio tipo flipboard se reserva para pasar a otra historia o edición. Agosto es la edición activa y comprable. Septiembre y Octubre funcionan como adelantos editoriales.
+
+## Dirección editorial
+
+La primera edición, **Monzón tapatío**, usa Guadalajara como punto de partida visual: lluvia, cantera, movilidad, materiales textiles, barrio y encuentros cotidianos. El tratamiento evita marcas ficticias, claims no verificados y una presentación de tienda genérica.
 
 ## Stack
 
