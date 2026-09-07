@@ -161,9 +161,9 @@ const productList = (ids: string[]): Product[] => ids
 
 const overlayPlacementFor = (index: number, primary: 'left' | 'center' | 'right'): EditorialProductTilePlacement => {
   const placements: Record<'left' | 'center' | 'right', EditorialProductTilePlacement[]> = {
-    left: ['left', 'right', 'center'],
-    right: ['right', 'left', 'center'],
-    center: ['center', 'left', 'right']
+    left: ['left', 'right', 'left-lower'],
+    right: ['right', 'left', 'right-lower'],
+    center: ['left', 'right', 'right-lower']
   };
   return placements[primary][index] ?? placements[primary][placements[primary].length - 1];
 };
