@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { MagazineEdition } from '../../../types';
-import { mapRange, calculateCoverDimensions } from './transitionMath';
+import { clamp, mapRange, calculateCoverDimensions } from './transitionMath';
 import { EditorialHotspots } from '../EditorialHotspots';
 import { StoryNotes } from '../StoryNotes';
 import { getStory } from '../../../domain/content';
@@ -8,6 +8,109 @@ import { getStory } from '../../../domain/content';
 const StoryPageFlip = React.lazy(() =>
   import('../pageFlip/StoryPageFlip').then((module) => ({ default: module.StoryPageFlip }))
 );
+
+interface MobileCoverFlipProps {
+  progress: number;
+  cover: React.ReactNode;
+  storyImage: string;
+  storyAlt: string;
+  rect: { left: number; top: number; width: number; height: number };
+}
+
+/**
+ * Mobile opening is a page turn, not a cover morph. The cover is rendered in
+ * two clipped sheets so its artwork, type and proportions stay untouched while
+ * the lower half lifts first and the upper half follows from the centre hinge.
+ */
+const MobileCoverFlip: React.FC<MobileCoverFlipProps> = ({
+  progress,
+  cover,
+  storyImage,
+  storyAlt,
+  rect
+}) => {
+  const p = clamp(progress, 0, 1);
+  const lowerFold = clamp(p / 0.52, 0, 1);
+  const upperFold = clamp((p - 0.42) / 0.58, 0, 1);
+
+  const renderCover = (key: string) => {
+    if (React.isValidElement(cover)) {
+      const originalStyle = (cover.props as { style?: React.CSSProperties }).style;
+      return React.cloneElement(cover as React.ReactElement<{ style?: React.CSSProperties }>, {
+        key,
+        style: {
+          ...originalStyle,
+          width: '100%',
+          height: '100%',
+          maxWidth: 'none'
+        }
+      });
+    }
+    return <React.Fragment key={key}>{cover}</React.Fragment>;
+  };
+
+  const sliceBase: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    transformStyle: 'preserve-3d',
+    backfaceVisibility: 'hidden',
+    willChange: 'transform',
+    pointerEvents: 'none'
+  };
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-[60] overflow-hidden"
+      style={{ perspective: '1600px', transformStyle: 'preserve-3d' }}
+    >
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={{ opacity: p, transform: 'translateZ(-1px)' }}
+      >
+        <img
+          src={storyImage}
+          alt={storyAlt}
+          draggable={false}
+          className="block h-full w-full object-cover object-[50%_45%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#05090d]/65 via-transparent to-[#05090d]/10" />
+      </div>
+
+      <div
+        className="absolute overflow-visible"
+        style={{
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+          transformStyle: 'preserve-3d'
+        }}
+      >
+        <div
+          style={{
+            ...sliceBase,
+            clipPath: 'inset(50% 0 0 0)',
+            transformOrigin: '50% 0%',
+            transform: `rotateX(${-90 * lowerFold}deg)`
+          }}
+        >
+          {renderCover('mobile-cover-bottom')}
+        </div>
+        <div
+          style={{
+            ...sliceBase,
+            clipPath: 'inset(0 0 50% 0)',
+            transformOrigin: '50% 100%',
+            transform: `rotateX(${-90 * upperFold}deg)`
+          }}
+        >
+          {renderCover('mobile-cover-top')}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface CoverStorySurfaceProps {
   edition: MagazineEdition;
@@ -105,14 +208,6 @@ export const CoverStorySurface: React.FC<CoverStorySurfaceProps> = ({
 
   const canvasVisible = isPageFlipPhase && readyFlipKey === flipVisualKey;
 
-  // Fullscreen state: when story is open or page-dragging/settling between stories
-  const isFullscreen =
-    phase === 'story' || phase === 'page-dragging' || phase === 'page-settling' || progress >= 0.999;
-
-  // Only activate 3D PageFlip when in story mode or page-dragging/settling
-  const isStoryActive =
-    phase === 'story' || phase === 'page-dragging' || phase === 'page-settling' || progress >= 0.99;
-
   const currentLook = edition.looks[currentLookIdx] || edition.looks[0];
   const nextLook = edition.looks[targetStoryIndex] || edition.looks[0];
   const activeStory = currentLook.storyId ? getStory(currentLook.storyId) : undefined;
@@ -120,6 +215,22 @@ export const CoverStorySurface: React.FC<CoverStorySurfaceProps> = ({
   // Geometric calculations
   const viewportW = windowSize.width;
   const viewportH = windowSize.height;
+
+  const isMobileViewport = viewportW < 768;
+  const isMobileCoverFlip =
+    isMobileViewport &&
+    isCoverDetached &&
+    (phase === 'opening' || phase === 'closing');
+
+  // Fullscreen state: when story is open or page-dragging/settling between stories
+  const isFullscreen =
+    isMobileCoverFlip ||
+    phase === 'story' || phase === 'page-dragging' || phase === 'page-settling' || progress >= 0.999;
+
+  // Only activate 3D PageFlip when in story mode or page-dragging/settling
+  const isStoryActive =
+    !isMobileCoverFlip &&
+    (phase === 'story' || phase === 'page-dragging' || phase === 'page-settling' || progress >= 0.99);
 
   // Fallback dimensions based on 5:7 aspect ratio
   const { width: coverW, height: coverH } = calculateCoverDimensions(viewportW, viewportH);
@@ -147,7 +258,7 @@ export const CoverStorySurface: React.FC<CoverStorySurfaceProps> = ({
   const borderRadius = isFullscreen ? '0px' : `${Math.max(0, (1 - progress) * 4)}px`;
   const shadowOpacity = isFullscreen ? 0 : Math.max(0, 1 - progress);
 
-  const isMorphing = progress > 0;
+  const isMorphing = progress > 0 && !isMobileCoverFlip;
   const transformStyle = isMorphing
     ? 'none'
     : horizontalTransform
@@ -168,25 +279,36 @@ export const CoverStorySurface: React.FC<CoverStorySurfaceProps> = ({
       id={`cover-story-surface-${edition.id}`}
       style={{
         position: 'fixed',
-        left: `${currentLeft}px`,
-        top: `${currentTop}px`,
-        width: `${currentW}px`,
-        height: `${currentH}px`,
+        left: `${isMobileCoverFlip ? 0 : currentLeft}px`,
+        top: `${isMobileCoverFlip ? 0 : currentTop}px`,
+        width: `${isMobileCoverFlip ? viewportW : currentW}px`,
+        height: `${isMobileCoverFlip ? viewportH : currentH}px`,
         transform: transformStyle,
         opacity: opacityStyle,
         transition: transitionStyle,
         zIndex: isFullscreen ? 40 : 35,
         borderRadius,
         boxShadow:
-          shadowOpacity > 0.02
+          shadowOpacity > 0.02 && !isMobileCoverFlip
             ? `inset 0 2px 0 rgba(255,255,255,${0.06 * shadowOpacity}), 0 ${60 * shadowOpacity}px ${120 * shadowOpacity}px rgba(0,0,0,${0.75 * shadowOpacity}), 0 ${18 * shadowOpacity}px ${44 * shadowOpacity}px rgba(0,0,0,${0.6 * shadowOpacity})`
             : 'none',
+        backgroundColor: isMobileCoverFlip ? 'transparent' : '#080d11',
         overflow: 'hidden',
         pointerEvents: isCoverActive ? 'auto' : 'none',
         willChange: 'width, height, top, left, border-radius, transform'
       }}
       className="[transform-style:preserve-3d] select-none bg-neutral-950 touch-none"
     >
+      {isMobileCoverFlip && (
+        <MobileCoverFlip
+          progress={progress}
+          cover={coverElement}
+          storyImage={currentLook.image}
+          storyAlt={currentLook.alt}
+          rect={{ left: baseLeft, top: baseTop, width: baseW, height: baseH }}
+        />
+      )}
+
       {/* Three.js GPU Page Flip Surface - Only active when story is settled */}
       {isStoryActive && (
         <Suspense fallback={
@@ -213,9 +335,10 @@ export const CoverStorySurface: React.FC<CoverStorySurfaceProps> = ({
       {/* Shared Base Photography & Cover Surface (No destructive deep CSS hacks) */}
       <div 
         className="absolute inset-0 z-0 bg-[#080d11] overflow-hidden pointer-events-none select-none flex items-center justify-center"
+        style={{ opacity: isMobileCoverFlip ? 0 : 1 }}
       >
         <div style={{ pointerEvents: progress < 0.2 ? 'auto' : 'none' }} className="w-full h-full">
-          {coverElement}
+          {!isMobileCoverFlip && coverElement}
         </div>
 
         {isStoryActive && (

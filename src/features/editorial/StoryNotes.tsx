@@ -120,6 +120,7 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
   const pointerRef = useRef<{ id: number; x: number; y: number } | null>(null);
   const gestureAxisRef = useRef<'horizontal' | 'vertical' | null>(null);
   const wheelLockRef = useRef(0);
+  const transitionLockRef = useRef(0);
 
   useEffect(() => {
     setNoteIndex(0);
@@ -138,6 +139,9 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
   if (notes.length === 0) return null;
 
   const moveNote = (direction: 1 | -1) => {
+    const now = performance.now();
+    if (now < transitionLockRef.current) return;
+    transitionLockRef.current = now + 560;
     const nextIndex = noteIndex + direction;
     if (nextIndex >= 0 && nextIndex < notes.length) {
       setNoteIndex(nextIndex);
@@ -150,6 +154,7 @@ export const StoryNotes: React.FC<StoryNotesProps> = ({
 
   const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
     event.stopPropagation();
+    if (performance.now() < transitionLockRef.current) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest('button, a, input, select, textarea, [role="button"]')) return;
     pointerRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY };

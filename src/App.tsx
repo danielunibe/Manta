@@ -529,6 +529,10 @@ export default function App() {
   const activeOpacity = isReady ? activeBaseOpacity : 0;
   // Rotation: center 0°, lateral max 12° progressive (within 10–14° specification)
   const activeRotateY = isCompactViewport ? 0 : Math.max(-12, Math.min(12, activeDiff * 12));
+  // On touch screens the cover must remain a true cover while the reader
+  // performs its vertical page flip. Desktop keeps the existing morph path;
+  // mobile renders the cover as a split page in CoverStorySurface.
+  const coverPresentationProgress = isCompactViewport ? 0 : progress;
 
   const coverComponents = React.useMemo(() => [
     <AugustCover
@@ -539,7 +543,7 @@ export default function App() {
       isDragging={isDragging || progress > 0.05}
       lookIndex={lookIndices[0]}
       onLookChange={(idx) => handleLookChange(0, idx)}
-      progress={currentIndex === 0 ? progress : 0}
+      progress={currentIndex === 0 ? coverPresentationProgress : 0}
       isDetached={currentIndex === 0 && isCoverDetached}
     />,
     <SeptemberCover
@@ -550,7 +554,7 @@ export default function App() {
       isDragging={isDragging || progress > 0.05}
       lookIndex={lookIndices[1]}
       onLookChange={(idx) => handleLookChange(1, idx)}
-      progress={currentIndex === 1 ? progress : 0}
+      progress={currentIndex === 1 ? coverPresentationProgress : 0}
       isDetached={currentIndex === 1 && isCoverDetached}
     />,
     <OctoberCover
@@ -561,10 +565,10 @@ export default function App() {
       isDragging={isDragging || progress > 0.05}
       lookIndex={lookIndices[2]}
       onLookChange={(idx) => handleLookChange(2, idx)}
-      progress={currentIndex === 2 ? progress : 0}
+      progress={currentIndex === 2 ? coverPresentationProgress : 0}
       isDetached={currentIndex === 2 && isCoverDetached}
     />
-  ], [currentIndex, isDragging, progress, lookIndices, isCoverDetached, handleTriggerBurst, handleLookChange]);
+  ], [currentIndex, isDragging, coverPresentationProgress, lookIndices, isCoverDetached, handleTriggerBurst, handleLookChange]);
 
   return (
     <div

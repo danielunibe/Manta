@@ -130,9 +130,13 @@ export function useCoverStoryTransition({
       setPhase(newPhase);
       if (target <= 0.001) {
         requestAnimationFrame(() => {
+          // A close can be followed by a new open before this cleanup frame
+          // paints. Never detach the newly opened cover or erase its rect.
+          if (phaseRef.current !== 'cover' || openProgressRef.current > 0.001) return;
           isCoverDetachedRef.current = false;
           setIsCoverDetached(false);
           requestAnimationFrame(() => {
+            if (phaseRef.current !== 'cover' || openProgressRef.current > 0.001 || isCoverDetachedRef.current) return;
             coverStartRectRef.current = null;
             setCoverStartRect(null);
           });
@@ -172,12 +176,16 @@ export function useCoverStoryTransition({
           // Frame B: openProgress = 0, phase = 'cover', surface is STILL fixed at startRect.
           // Wait 1 RAF frame so the browser paints the exact 100% rest cover frame.
           requestAnimationFrame(() => {
+            // Reopening during the two-frame handoff must keep the detached
+            // surface alive; otherwise the carousel can flash or lose its page.
+            if (phaseRef.current !== 'cover' || openProgressRef.current > 0.001) return;
             // Frame C: Reattach cover into carousel (pixel-identical to Frame B)
             isCoverDetachedRef.current = false;
             setIsCoverDetached(false);
             
             // Clean up startRect after carousel is safely rendered underneath
             requestAnimationFrame(() => {
+              if (phaseRef.current !== 'cover' || openProgressRef.current > 0.001 || isCoverDetachedRef.current) return;
               coverStartRectRef.current = null;
               setCoverStartRect(null);
             });
@@ -318,6 +326,19 @@ export function useCoverStoryTransition({
 
   // Pointer Handlers
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    // Never interrupt a settling cover/page animation with a second touch.
+    // Interrupting here was the source of the "one or two swipes and stuck"
+    // state on mobile: the visual animation was cancelled while the phase
+    // still claimed to be opening or flipping.
+    if (
+      phaseRef.current === 'opening' ||
+      phaseRef.current === 'closing' ||
+      phaseRef.current === 'page-settling' ||
+      phaseRef.current === 'page-dragging'
+    ) {
+      return;
+    }
+
     if (animFrameIdRef.current) {
       cancelAnimationFrame(animFrameIdRef.current);
       animFrameIdRef.current = null;
@@ -653,7 +674,8 @@ export function useCoverStoryTransition({
   // Global pointercancel / blur cleanup to guarantee no zombie gesture state
   useEffect(() => {
     const handleGlobalCancel = () => {
-      if (activePointerIdRef.current !== null || gestureOwnerRef.current === 'edition-carousel') {
+      const owner = gestureOwnerRef.current;
+      if (activePointerIdRef.current !== null || owner === 'edition-carousel') {
         activePointerIdRef.current = null;
         setIsPointerActive(false);
         if (gestureOwnerRef.current === 'edition-carousel') {
@@ -661,6 +683,14 @@ export function useCoverStoryTransition({
         }
         gestureOwnerRef.current = null;
         gestureAxisRef.current = null;
+
+        // Resolve interrupted gestures to a stable page instead of leaving
+        // the reader between states after a touch-cancel or app switch.
+        if (owner === 'cover-morph') {
+          animateOpenProgressTo(openProgressRef.current >= 0.45 ? 1 : 0);
+        } else if (owner === 'page-flip') {
+          animatePageProgressTo(pageProgressRef.current >= 0.28 ? 1 : 0);
+        }
       }
     };
     window.addEventListener('blur', handleGlobalCancel);
@@ -669,7 +699,7 @@ export function useCoverStoryTransition({
       window.removeEventListener('blur', handleGlobalCancel);
       window.removeEventListener('pointercancel', handleGlobalCancel);
     };
-  }, [onHorizontalDragEnd]);
+  }, [animateOpenProgressTo, animatePageProgressTo, onHorizontalDragEnd]);
 
   return {
     phase,
